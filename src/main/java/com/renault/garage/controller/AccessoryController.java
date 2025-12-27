@@ -17,6 +17,7 @@ import com.renault.garage.model.Accessory;
 import com.renault.garage.model.Vehicle;
 import com.renault.garage.repository.VehicleRepository;
 import com.renault.garage.service.AccessoryService;
+import com.renault.garage.service.VehicleService;
 
 @RestController
 @RequestMapping("/api")
@@ -26,7 +27,7 @@ public class AccessoryController {
     private AccessoryService accessoryService;
 
     @Autowired
-    private VehicleRepository vehicleRepository;
+    private VehicleService vehicleService;
 
     @GetMapping("/vehicles/{vehicleId}/accessories")
     public List<Accessory> getAccessoriesByVehicle(@PathVariable Long vehicleId) {
@@ -37,8 +38,7 @@ public class AccessoryController {
     public ResponseEntity<Accessory> addAccessoryToVehicle(
         @PathVariable Long vehicleId,
         @RequestBody Accessory accessory) {
-        Vehicle vehicle = vehicleRepository.findById(vehicleId)
-            .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        Vehicle vehicle = vehicleService.getVehicleById(vehicleId);
         Accessory savedAccessory = accessoryService.addAccessoryToVehicle(accessory, vehicle);
         return ResponseEntity.ok(savedAccessory);
     }

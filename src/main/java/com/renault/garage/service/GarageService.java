@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.renault.garage.exceptions.ResourceNotFoundException;
 import com.renault.garage.model.Garage;
 import com.renault.garage.repository.GarageRepository;
 
@@ -21,7 +22,7 @@ public class GarageService {
     }
 
     public Garage getGarageById(Long id) {
-        return garageRepository.findById(id).orElse(null);
+        return findGarageOrThrow(id);
     }
 
     public Garage createGarage(Garage garage) {
@@ -29,23 +30,26 @@ public class GarageService {
     }
 
     public Garage updateGarage(Long id, Garage garageDetails) {
-        Garage existingGarage = garageRepository.findById(id).orElse(null);
-        if (existingGarage != null) {
-            Garage updatedGarage = Garage.builder()
-                .id(existingGarage.getId())
-                .name(garageDetails.getName())
-                .address(garageDetails.getAddress())
-                .telephone(garageDetails.getTelephone())
-                .email(garageDetails.getEmail())
-                .openingHours(garageDetails.getOpeningHours())
-                .vehicles(existingGarage.getVehicles() != null ? existingGarage.getVehicles() : new ArrayList<>())
-                .build();
-            return garageRepository.save(updatedGarage);
-        }
-        return null;
+        Garage existingGarage = findGarageOrThrow(id);
+
+        Garage updatedGarage = Garage.builder()
+            .id(existingGarage.getId())
+            .name(garageDetails.getName())
+            .address(garageDetails.getAddress())
+            .telephone(garageDetails.getTelephone())
+            .email(garageDetails.getEmail())
+            .openingHours(garageDetails.getOpeningHours())
+            .vehicles(existingGarage.getVehicles() != null ? existingGarage.getVehicles() : new ArrayList<>())
+            .build();
+        return garageRepository.save(updatedGarage);
     }
 
     public void deleteGarage(Long id) {
         garageRepository.deleteById(id);
+    }
+
+    private Garage findGarageOrThrow(Long id) {
+        return garageRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Garage not found with id: " + id));
     }
 }

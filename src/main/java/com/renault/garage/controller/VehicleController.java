@@ -28,12 +28,8 @@ public class VehicleController {
 
     @PostMapping("/garages/{garageId}/vehicles")
     public ResponseEntity<Vehicle> addVehicleToGarage(@PathVariable Long garageId, @RequestBody Vehicle vehicle) {
-        try {
-            Vehicle savedVehicle = vehicleService.addVehicleToGarage(garageId, vehicle);
-            return ResponseEntity.ok(savedVehicle);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null);
-        }
+        Vehicle savedVehicle = vehicleService.addVehicleToGarage(garageId, vehicle);
+        return ResponseEntity.ok(savedVehicle);
     }
 
     @GetMapping("/vehicles/model/{model}")

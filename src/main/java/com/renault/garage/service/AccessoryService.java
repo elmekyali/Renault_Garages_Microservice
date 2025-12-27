@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.renault.garage.exceptions.ResourceNotFoundException;
 import com.renault.garage.model.Accessory;
 import com.renault.garage.model.Vehicle;
 import com.renault.garage.repository.AccessoryRepository;
@@ -29,18 +30,16 @@ public class AccessoryService {
     }
 
     public Accessory updateAccessory(Long id, Accessory accessoryDetails) {
-        Accessory existingAccessory = accessoryRepository.findById(id).orElse(null);
-        if (existingAccessory != null) {
-            Accessory updatedAccessory = Accessory.builder()
-                .id(existingAccessory.getId())
-                .name(accessoryDetails.getName())
-                .description(accessoryDetails.getDescription())
-                .price(accessoryDetails.getPrice())
-                .type(accessoryDetails.getType())
-                .vehicle(existingAccessory.getVehicle())
-                .build();
-            return accessoryRepository.save(updatedAccessory);
-        }
-        return null;
+        Accessory existingAccessory = accessoryRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Accessory not found with id: " + id));
+
+        Accessory updatedAccessory = Accessory.builder()
+            .id(existingAccessory.getId())
+            .name(accessoryDetails.getName())
+            .description(accessoryDetails.getDescription())
+            .price(accessoryDetails.getPrice())
+            .type(accessoryDetails.getType())
+            .vehicle(existingAccessory.getVehicle())
+            .build();
+        return accessoryRepository.save(updatedAccessory);
     }
 }

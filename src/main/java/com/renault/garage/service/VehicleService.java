@@ -8,6 +8,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.renault.garage.event.VehicleCreatedEvent;
+import com.renault.garage.exceptions.GarageCapacityException;
+import com.renault.garage.exceptions.ResourceNotFoundException;
+import com.renault.garage.exceptions.ValidationException;
 import com.renault.garage.model.Garage;
 import com.renault.garage.model.Vehicle;
 import com.renault.garage.repository.GarageRepository;
@@ -41,19 +44,9 @@ public class VehicleService {
 
     public Vehicle addVehicleToGarage(Long garageId, Vehicle vehicle) {
         Garage garage = garageRepository.findById(garageId)
-            .orElseThrow(() -> new RuntimeException("Garage not found!"));
+            .orElseThrow(() -> new ResourceNotFoundException("Garage not found with id: " + garageId));
 
-        if (!yearValidationStrategy.validate(vehicle)) {
-            throw new RuntimeException(yearValidationStrategy.getErrorMessage());
-        }
-        if (!fuelTypeValidationStrategy.validate(vehicle)) {
-            throw new RuntimeException(fuelTypeValidationStrategy.getErrorMessage());
-        }
-
-        long vehicleCount = vehicleRepository.findByGarageId(garageId).size();
-        if (vehicleCount >= MAX_VEHICLES_PER_GARAGE) {
-            throw new RuntimeException("Garage is full. Cannot add more vehicles!!");
-        }
+        validateVehicle(vehicle, garageId);
 
         Vehicle vehicleToSave = Vehicle.builder()
             .brand(vehicle.getBrand())
@@ -73,5 +66,36 @@ public class VehicleService {
 
     public List<Vehicle> getVehiclesByModel(String model) {
         return vehicleRepository.findByModel(model);
+    }
+
+    public Vehicle getVehicleById(Long id) {
+        return vehicleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with id: " + id));
+    }
+
+    private void validateVehicle(Vehicle vehicle, Long garageId) {
+        List<ValidationException.ValidationError> errors = new ArrayList<>();
+
+        if (!yearValidationStrategy.validate(vehicle)) {
+            errors.add(new ValidationException.ValidationError(
+                "manufacturingYear",
+                yearValidationStrategy.getErrorMessage()
+            ));
+        }
+
+        if (!fuelTypeValidationStrategy.validate(vehicle)) {
+            errors.add(new ValidationException.ValidationError(
+                "fuelType",
+                fuelTypeValidationStrategy.getErrorMessage()
+            ));
+        }
+
+        if (!errors.isEmpty()) {
+            throw new ValidationException(errors);
+        }
+
+        long vehicleCount = vehicleRepository.findByGarageId(garageId).size();
+        if (vehicleCount >= MAX_VEHICLES_PER_GARAGE) {
+            throw new GarageCapacityException((int) vehicleCount, MAX_VEHICLES_PER_GARAGE);
+        }
     }
 }
